@@ -30,8 +30,8 @@ class rbtree {
   Node* root;
 
   //functions used within class
-  void rotateLeft(Node *&);
-  void rotateRight(Node *&);
+  void rotateLeft(Node* &x, Node* &root);
+  void rotateRight(Node* &x, Node* &root);
   void fixViolation(Node *&, Node *&);
 
 public:
@@ -64,17 +64,15 @@ void rbtree::inorder() {
 }
 
 //arrangement of nodes on right side transformed to left side
-void rbtree::rotateLeft(Node * &x) {
+void rbtree::rotateLeft(Node * &x, Node* &root) {
   Node* y = x->right;
   x->right = y->left;
 
-  if(x->right != nullptr) {
+  if(x->right) {
     x->right->parent = x;
   }
-
   y->parent = x->parent;
-
-  if(x->parent == nullptr) {
+  if(!x->parent) {
     root = y;
   }
   else if(x == x->parent->left) {
@@ -83,36 +81,31 @@ void rbtree::rotateLeft(Node * &x) {
   else {
     x->parent->right = y;
   }
-
-  x->left = x;
+  y->left = x;
   x->parent = y;
 }
 
 //arrangement of nodes on left side transformed to right side
-void rbtree::rotateRight(Node* &x) {
+void rbtree::rotateRight(Node* &x, Node* &root) {
   Node* y = x->left;
   x->left = y->right;
 
-  if(x->left != nullptr) {
+  if(x->left) {
     x->left->parent = x;
   }
-
   y->parent = x->parent;
-
-  if(x->parent == nullptr) {
+  if(!x->parent) {
     root = y;
   }
-
   else if(x == x->parent->left) {
     x->parent->left = y;
   }
-
   else {
     x->parent->right = y;
   }
-
   y->right = x;
   x->parent = y;
+  
 }
 
 /*
@@ -173,6 +166,7 @@ void rbtree::fixViolation(Node* &root, Node* &n) {
 void rbtree::fixViolation(Node* &root, Node* &n) {
   Node* parent = nullptr;
   Node* grandparent = nullptr;
+  Node* uncle = nullptr;
 
   //loop until inserted node 'n' becomes root or until parent's color becomes black
   
@@ -180,10 +174,10 @@ void rbtree::fixViolation(Node* &root, Node* &n) {
     parent = n->parent;
     grandparent = n->parent->parent;
 
-    if(parent == grandparent->left) {
-      Node* uncle = grandparent->right;
+    if(parent == grandparent->left) { //if parent is left child
+      uncle = grandparent->right;
 
-      if(uncle != nullptr && uncle->color == red) {
+      if(uncle && uncle->color == red) {
 	grandparent->color = red;
 	parent->color = black;
 	uncle->color = black;
@@ -192,19 +186,21 @@ void rbtree::fixViolation(Node* &root, Node* &n) {
 
       else {
 	if (n == parent->right) {
-	  rotateLeft(parent);
+	  rotateLeft(parent, root);
 	  n = parent;
 	  parent = n->parent;
 	}
 
-	rotateRight(grandparent);
-	swap(parent->color, grandparent->color);
+	rotateRight(grandparent, root);
+	//swap(parent->color, grandparent->color);
+	parent->color = black;
+	grandparent->color = red;
 	n = parent;
       }
     }
 
     else {
-      Node* uncle = grandparent->left;
+      uncle = grandparent->left;
 
       if((uncle != nullptr) && (uncle->color == red)) {
 	grandparent->color = red;
@@ -215,13 +211,15 @@ void rbtree::fixViolation(Node* &root, Node* &n) {
 
       else {
 	if (n == parent->left) {
-	  rotateRight(parent);
+	  rotateRight(parent, root);
 	  n = parent;
 	  parent = n->parent;
 	}
 
-	rotateLeft(grandparent);
-	swap(parent->color, grandparent->color);
+	rotateLeft(grandparent, root);
+	//swap(parent->color, grandparent->color);
+	parent->color = black;
+	grandparent->color = red;
 	n = parent;
       }
     }
@@ -232,20 +230,15 @@ void rbtree::fixViolation(Node* &root, Node* &n) {
 
 //call the insertNode function
 void rbtree::insert(int &num) {
-  insertNode(root, num);
-  /*
-  Node* newNode = new Node(num);
-  root = insertNode(root, newNode);
-
-  fixViolation(root, newNode);
-  */
+  Node* current = new Node(num);
+  current = insertNode(root, num);
+  fixViolation(root, current);
 }
 
 //insert a node with # given by user into tree
 Node* rbtree::insertNode(Node* &root, int num) {
   if (root == nullptr) {
     Node* newRoot = new Node(num);
-    //return newNode;
     root = newRoot;
     return root;
   }
@@ -255,81 +248,37 @@ Node* rbtree::insertNode(Node* &root, int num) {
     //if to the left, check if it is at the base of tree
     if(num < root->data && root->left) {
       Node* temp = root->left;
+      //newNode = root->left;
+      //return insertNode(newNode, num, newNode);
+      //fixViolation(root, temp);
       return insertNode(temp, num);
     }
     else if(num < root->data && !root->left) {
       Node* newNode = new Node(num);
       root->left = newNode;
       newNode->parent = root;
+      //fixViolation(root, newNode);
       return newNode;
     }
 
     if(num > root->data && root->right) {
       Node* temp = root->right;
+      //fixViolation(root, temp);
       return insertNode(temp, num);
+      //return insertNode(newNode, num, newNode);
     }
     else if(num > root->data && !root->right) {
       Node* newNode = new Node(num);
       root->right = newNode;
       newNode->parent = root;
+      //fixViolation(root, newNode);
       return newNode;
     }
-
-    /*
-    if(newNode->data < root->data) {
-      root->left = insertNode(root->left, newNode);
-      root->left->parent = root;
-    }
-    
-    //if new node is bigger than root, added to right side of tree
-    else if(newNode->data > root->data) {
-      root->right = insertNode(root->right, newNode);
-      root->right->parent = root;
-    }
-    */
   }
+  //fixViolation(root, newNode);
   return NULL;
   //return root;
 }
-
-
-/*
-void rbtree::insert(int num) {
-  Node* newNode = new Node(num);
-
-  Node* y = nullptr;
-  Node* x = this->root;
-
-  while (x != nullptr) {
-    y = x;
-    if (newNode->data < x->data) {
-      x = x->left;
-    } else{
-      x = x->right;
-    }
-  }
-
-  newNode->parent = y;
-  if(y == nullptr) {
-    root = newNode;
-  } else if (newNode->data < y->data) {
-    y->left = newNode;
-  } else {
-    y->right = newNode;
-  }
-
-  if (newNode->parent == nullptr) {
-    newNode->color = black;
-    return;
-  }
-
-  if(newNode->parent->parent == nullptr) {
-    return;
-  }
-
-  fixViolation(root, newNode);
-}
-*/
 
 //print 2d tree with node color
 void rbtree::print(Node* root, int space) {
@@ -391,7 +340,7 @@ int main() {
       //temp->setColor(0);
       //cout << temp->getColor() << endl;
       tree.insert(num);
-    	
+      //tree.fixViolation(root,  
       cout << "# has been added" << endl;
     }
   
