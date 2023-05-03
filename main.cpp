@@ -299,6 +299,11 @@ void rbtree::print(Node* root, int space) {
     cout << " ";
   }
 
+  if(root->parent != nullptr) {
+    //print node parent
+    cout << "p:" << root->parent->data << ", ";
+  }
+  
   //if node color is red or black,
   //print color correspondingly in parenthesis next to number
   cout << root->data << "(" << (root->color == red ? "R" : "B") << ")" << endl;
@@ -361,6 +366,8 @@ int main() {
 
     //print 2d tree
     else if(strcmp(input, "PRINT") == false) {
+      cout << "*p stands for parent" << endl;
+      cout << endl;
       tree.callPrint();
     }
 
