@@ -6,8 +6,14 @@ using namespace std;
 /*
   Name: Helen Wang
   Date: May 2, 2023
-  Program: Red Black Tree, able to correctly sort and balance tree
-  -> users can insert numbers through console and file, and print the tree
+  Program: Red Black Tree, able to correctly sort and balance tree.
+  The red or black node attribute is used to ensure balanced tree.
+
+  Functions:
+  -> insert values (console & file)
+  -> print 2D model of tree
+  -> search for value
+  -> delete value (and correctly reformat tree)
  */
 
 enum Color {red, black}; //Enumeration
@@ -33,20 +39,26 @@ class rbtree {
   void rotateLeft(Node* &x, Node* &root);
   void rotateRight(Node* &x, Node* &root);
   void fixViolation(Node *&, Node *&);
-
+  //void transplant(Node* x, Node* y);
+  Node* minimum(Node* node);
+  
+  
 public:
   rbtree() {
     root = nullptr;
   }
 
   //functions to be called by others
-  //void insert(int num);
   void insert(int &num);
-  //Node* insertNode(Node* &root, Node* &newNode);
   Node* insertNode(Node* &root, int num);
   void print(Node* root, int space);
   void callPrint();
+  int callSearch(int douexist);
+  int search(int douexist, Node* root);
   void inorder();
+  void deleteNode(int &n);
+  void deleteHelper(Node* node);
+  
 };
 
 //in order
@@ -61,6 +73,13 @@ void inorderHelper(Node * root) {
 //call the inorderHelper function
 void rbtree::inorder() {
   inorderHelper(root);
+}
+
+Node* rbtree::minimum(Node* node) {
+  while(node->left != NULL) {
+    node = node->left;
+  }
+  return node;
 }
 
 //arrangement of nodes on right side transformed to left side
@@ -107,60 +126,6 @@ void rbtree::rotateRight(Node* &x, Node* &root) {
   x->parent = y;
   
 }
-
-/*
-void rbtree::fixViolation(Node* &root, Node* &n) {
-  Node* parent = nullptr;
-  Node* grandparent = nullptr;
-  Node* u;
-  
-  while(n->parent->color == red) {
-    parent = n->parent;
-    grandparent = n->parent->parent;
-
-    if(parent == grandparent->right) {
-      u = grandparent->left;
-      if(u->color == red) {
-	u->color = black;
-	parent->color = black;
-	grandparent->color = red;
-	n = grandparent;
-      } else {
-	if(n == parent->left) {
-	  n = parent;
-	  rotateRight(n);
-	}
-	parent->color = black;
-	grandparent->color = red;
-	rotateLeft(grandparent);
-      }
-    } else {
-      u = grandparent->right;
-
-      if(u->color == red) {
-	u->color = black;
-	parent->color = black;
-	grandparent->color = red;
-	n = grandparent;
-      } else {
-	if(n == parent->right) {
-	  n = parent;
-	  rotateLeft(n);
-	}
-	parent->color = black;
-	grandparent->color = red;
-	rotateRight(grandparent);
-      }
-    }
-    if(n == root) {
-
-      break;
-    }
-  }
-  root->color = black;
-}
-*/
-
 
 //balance the tree after insertion
 void rbtree::fixViolation(Node* &root, Node* &n) {
@@ -317,6 +282,170 @@ void rbtree::callPrint() {
   print(root, 0);
 }
 
+int rbtree::callSearch(int douexist) {
+  return search(douexist, root);
+}
+
+int rbtree::search(int douexist, Node* root) {
+  //if it equals the root
+  if(!root || root->data == douexist) {
+    return root->data;
+  }
+
+  //if number is bigger than root
+  if(root->data < douexist) {
+    //bottom of tree
+    if(!root->right) {
+      return root->data;
+    }
+    return search(douexist, root->right);
+  }
+  
+  //if number is smaller than root
+  else {
+    //bootom of tree
+    if(!root->left) {
+      return root->data;
+    }
+    return search(douexist, root->left);
+  }
+}
+
+//Resource for deletion: Programiz
+
+//helper function to delete node
+void rbtree::deleteNode(int& num) {
+  //Case 1: Node has no children
+  //Case 2: Node has 1 child
+  //Case 3: Node has 2 children
+
+  //search for node to delete
+  Node* z = root;
+  Node* x;
+  Node* y;
+
+  while(z != nullptr) {
+    if(z->data == num) {
+      break;
+    }
+    if(z->data < num) {
+      z = z->right;
+    } else {
+      z= z->left;
+    }
+  }
+
+  //determine node to splice out
+  if(z->left == nullptr || z->right == nullptr) {
+    //if node to delete has at most once child, splice
+    y = z;
+  } else {
+    //or find node's successor and splice that out
+    y = minimum(z->right);
+  }
+
+  //determine node to replace spliced-out node
+  if(y->left != nullptr) {
+    x = y->left;
+  } else {
+    x = y->right;
+  }
+
+  if(x != nullptr) {
+    x->parent = y->parent;
+  }
+
+  if(y->parent == nullptr) {
+    //if spliced out root, replace with new root
+    root = x;
+  } else if (y == y->parent->left) {
+    y->parent->left = x;
+  } else {
+    y->parent->right = x;
+  }
+
+  if(y != z) {
+    z->data = y->data;
+  }
+
+  if(y->color == black) {
+    deleteHelper(x);
+  }
+  delete y;
+}
+
+void rbtree::deleteHelper(Node* node) {
+  while (node != root && (node == nullptr || node->color == black)) {
+    if (node == node->parent->left) {
+      Node *sibling = node->parent->right;
+      
+      if (sibling->color == red) {
+	//case 1: sibling is red
+	sibling->color = black;
+	node->parent->color = red;
+	rotateLeft(node->parent, root);
+	sibling = node->parent->right;
+      }
+      
+      if ((sibling->left == nullptr || sibling->left->color == black) &&
+	  (sibling->right == nullptr || sibling->right->color == black)) {
+	//case 2: sibling is black & both of its children are black
+	sibling->color = red;
+	node = node->parent;
+      } else {
+	//case 3: sibling is black, left child is red & right child is black
+	if (sibling->right == nullptr || sibling->right->color == black) {
+	  sibling->left->color = black;
+	  sibling->color = red;
+	  rotateRight(sibling, root);
+	  sibling = node->parent->right;
+	}
+
+	//case 4: sibling is black and right child is red
+	sibling->color = node->parent->color;
+	node->parent->color = black;
+	sibling->right->color = black;
+	rotateLeft(node->parent, root);
+	node = root;
+      }
+    } else {
+      Node *sibling = node->parent->left;
+      
+      if (sibling->color == red) {
+	//case 1: sibling is red
+	sibling->color = black;
+	node->parent->color = red;
+	rotateRight(node->parent, root);
+	sibling = node->parent->left;
+      }
+      
+      if ((sibling->left == nullptr || sibling->left->color == black) &&
+	  (sibling->right == nullptr || sibling->right->color == black)) {
+	//case 2: sibling is black & both its children are black
+	sibling->color = red;
+	node = node->parent;
+      } else {
+	if (sibling->left == nullptr || sibling->left->color == black) {
+	  //case 3: sibling is black, right child is red, and left is black
+	  sibling->right->color = black;
+	  sibling->color = red;
+	  rotateLeft(sibling, root);
+	  sibling = node->parent->left;
+	}
+	//case 4: sibling is black and left child is red
+	sibling->color = node->parent->color;
+	node->parent->color = black;
+	sibling->left->color = black;
+	rotateRight(node->parent, root);
+	node = root;
+      }
+    }
+  }
+  if (node!= nullptr) {
+    node->color = black;
+  }
+}
+
 int main() {
   //Intialize variables and tree
   rbtree tree;
@@ -326,11 +455,11 @@ int main() {
   //Read in user input (different commands)
   while (playing == true) {
     cout << endl;
-    cout << "[ADD] [READ] [PRINT] or [QUIT]" << endl;
+    cout << "[ADD] [FILE] [DELETE] [SEARCH] [PRINT] or [QUIT]" << endl;
     
     cin.get(input, 20, '\n');
     cin.ignore();
-    
+
     if(strcmp(input, "ADD") == false) {
 
       //Read in values from user
@@ -350,7 +479,7 @@ int main() {
     }
   
     //Read in values from a file
-    else if(strcmp(input, "READ") == false) {
+    else if(strcmp(input, "FILE") == false) {
       fstream file;
       file.open("number.txt");
       //file.open(number);
@@ -364,6 +493,43 @@ int main() {
       file.close();
     }
 
+    //delete value from tree
+    else if(strcmp(input, "DELETE") == false) {
+      cout << "enter the # you wish to delete" << endl;
+      int deleteNum = 0;
+      cin >> deleteNum;
+      cin.ignore();
+
+      int found = tree.callSearch(deleteNum);
+
+      
+      if(found == deleteNum) {
+	tree.deleteNode(deleteNum);
+	cout << deleteNum << " has been deleted" << endl;
+      }
+      else if(found != deleteNum) {
+	cout << "# isn't in tree" << endl;
+      }
+      
+    }
+
+    //search value in tree
+    else if(strcmp(input, "SEARCH") == false) {
+      cout << "enter the # you wish to search for" << endl;
+      int searchNum = 0;
+      cin >> searchNum;
+      cin.ignore();
+
+      int found = tree.callSearch(searchNum);
+
+      if(found == searchNum) {
+	cout << "# is found" << endl;
+      }
+      else if(found != searchNum) {
+	cout << "# isn't in tree" << endl;
+      }
+    }
+      
     //print 2d tree
     else if(strcmp(input, "PRINT") == false) {
       cout << "*p stands for parent" << endl;
