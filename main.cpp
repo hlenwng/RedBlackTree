@@ -383,8 +383,16 @@ void rbtree::deleteHelper(Node* node) {
 	//case 1: sibling is red
 	sibling->color = black;
 	node->parent->color = red;
+
+	//new
+	if(node->parent->left == sibling) {
+	  rotateRight(node->parent, root);
+	}
+	else {
 	rotateLeft(node->parent, root);
-	sibling = node->parent->right;
+	}
+	//sibling = node->parent->right;
+	deleteHelper(node);
       }
       
       if ((sibling->left == nullptr || sibling->left->color == black) &&
@@ -401,12 +409,15 @@ void rbtree::deleteHelper(Node* node) {
 	  sibling = node->parent->right;
 	}
 
+	//try
+	else {
 	//case 4: sibling is black and right child is red
 	sibling->color = node->parent->color;
 	node->parent->color = black;
 	sibling->right->color = black;
 	rotateLeft(node->parent, root);
 	node = root;
+      }
       }
     } else {
       Node *sibling = node->parent->left;
