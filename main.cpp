@@ -375,6 +375,12 @@ void rbtree::deleteNode(int& num) {
 }
 
 void rbtree::deleteHelper(Node* node) {
+
+  //fixed deletion (5/30/23)?
+  if(node == nullptr) {
+    return;
+  }
+
   while (node != root && (node == nullptr || node->color == black)) {
     if (node == node->parent->left) {
       Node *sibling = node->parent->right;
@@ -384,7 +390,7 @@ void rbtree::deleteHelper(Node* node) {
 	sibling->color = black;
 	node->parent->color = red;
 
-	//new
+	//new fixed deletion
 	if(node->parent->left == sibling) {
 	  rotateRight(node->parent, root);
 	}
